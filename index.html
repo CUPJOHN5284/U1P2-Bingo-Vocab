@@ -1,0 +1,141 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AP Stats Bingo Caller</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f7fb;color:#132238;margin:0}
+.wrap{max-width:1100px;margin:auto;padding:24px}
+h1{text-align:center;font-size:40px;margin:5px}
+.sub{text-align:center;color:#607089;margin-bottom:20px}
+.panel{background:white;border:1px solid #d7e0ea;border-radius:16px;padding:22px;box-shadow:0 5px 18px #0001}
+.definition{min-height:210px;border:3px solid #1f5f99;border-radius:18px;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;font-size:32px;font-weight:bold;line-height:1.3}
+.answer{min-height:80px;margin-top:14px;border-radius:14px;background:#eaf2f9;display:flex;align-items:center;justify-content:center;text-align:center;padding:15px;font-size:32px;font-weight:bold}
+.hidden{color:#607089;font-size:20px;font-weight:normal}
+.buttons{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-top:16px}
+button{border:0;border-radius:12px;padding:15px;font-size:19px;font-weight:bold;cursor:pointer}
+.next{background:#1f5f99;color:white} .show{background:#dceaf6;color:#173f63} .reset{background:#f7e6e6;color:#a43d3d}
+.stats{display:flex;justify-content:space-between;color:#607089;font-weight:bold;margin-top:14px}
+.history{margin-top:20px} .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{background:#eef3f8;border:1px solid #d7e0ea;border-radius:9px;padding:7px 10px}
+
+.top-layout{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+.cage-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.cage-title{font-weight:800;color:var(--accent2);font-size:18px}
+.cage{width:280px;height:280px;border:8px solid #6f7780;border-radius:50%;position:relative;overflow:hidden;background:repeating-linear-gradient(90deg,transparent 0 19px,rgba(80,90,100,.45) 19px 22px),repeating-linear-gradient(0deg,transparent 0 19px,rgba(80,90,100,.45) 19px 22px),radial-gradient(circle at 35% 30%,#fff 0%,#eef2f5 60%,#d9e0e6 100%);box-shadow:inset 0 0 0 4px #b8bec5,0 6px 16px rgba(0,0,0,.14);transform-origin:center}
+.cage.spinning{animation:cageSpin .75s ease-in-out 2}
+@keyframes cageSpin{0%{transform:rotate(0)}25%{transform:rotate(10deg)}50%{transform:rotate(-12deg)}75%{transform:rotate(8deg)}100%{transform:rotate(0)}}
+.ball{position:absolute;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#fff 0%,#f7f7f7 35%,#d9dde2 100%);border:1px solid #9098a0;box-shadow:0 2px 4px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#31465a;transition:left .55s ease,top .55s ease,transform .55s ease,opacity .45s ease;user-select:none}
+.cage.spinning .ball{animation:ballJiggle .22s linear infinite alternate}
+@keyframes ballJiggle{from{transform:translate(-3px,-2px) rotate(-8deg)}to{transform:translate(4px,3px) rotate(9deg)}}
+.ball.called{opacity:0;transform:scale(.2) translateY(120px)}
+.cage-base{width:210px;height:28px;border-radius:8px;background:linear-gradient(#5b3d24,#3c2818);box-shadow:0 4px 8px rgba(0,0,0,.2);position:relative}
+.cage-base:before,.cage-base:after{content:"";position:absolute;top:-22px;width:14px;height:24px;border-radius:6px 6px 0 0;background:#777f87}
+.cage-base:before{left:26px}.cage-base:after{right:26px}
+.cage-count{font-size:14px;color:var(--muted);font-weight:700}
+.definition-area{min-width:0}
+@media(max-width:700px){.buttons{grid-template-columns:1fr}.top-layout{grid-template-columns:1fr}.cage{width:240px;height:240px}.definition{font-size:24px}}
+</style></head>
+<body><div class="wrap">
+<h1>AP Statistics Bingo Caller</h1>
+<div class="sub">Students hear/see the definition first. Reveal the vocabulary word only when you choose.</div>
+<div class="panel">
+<div class="top-layout">
+<div class="cage-wrap">
+<div class="cage-title">BINGO CALLER CAGE</div>
+<div id="cage" class="cage"></div>
+<div class="cage-base"></div>
+<div class="cage-count"><span id="ballsInCage">34</span> balls in cage</div>
+</div>
+<div class="definition-area">
+<div id="definition" class="definition">Press “Next Definition” to begin.</div>
+<div id="answer" class="answer"><span class="hidden">Vocabulary word hidden</span></div>
+</div>
+</div>
+<div class="buttons">
+<button class="next" id="next">Next Definition</button>
+<button class="show" id="show">Show Word</button>
+<button class="reset" id="reset">Reset Game</button>
+</div>
+<div class="stats"><span>Called: <b id="called">0</b></span><span>Remaining: <b id="remaining">34</b></span></div>
+<div class="history"><b>Previously called definitions</b><div id="history" class="chips"></div></div>
+</div></div>
+<script>
+const defs={"Replication": "Using enough experimental units in each treatment group, or repeating an experiment, to help separate real treatment effects from chance variation.", "Confounding": "When the effects of two variables on a response cannot be distinguished from each other.", "Placebo effect": "A response caused by the belief that a treatment was received, rather than by the treatment itself.", "Cause-and-effect conclusion": "A conclusion that changes in the explanatory variable caused changes in the response variable; justified by a well-designed randomized experiment.", "Treatment": "A specific experimental condition applied to experimental units.", "Matched pairs design": "A randomized block design using blocks of two similar units, or the same unit receiving both treatments in random order.", "Single-blind experiment": "An experiment in which either the subjects or the people interacting with them do not know which treatment was assigned.", "Subject": "A human experimental unit.", "Randomized block design": "An experiment in which similar experimental units are grouped into blocks and treatments are randomly assigned within each block.", "Control group": "A group used as a comparison against the treatment group or groups.", "Simple random sample (SRS)": "A sample chosen so that every possible sample of the same size has an equal chance of being selected.", "Generalizability": "The extent to which results from a sample can be applied to a larger population.", "Undercoverage bias": "Bias that occurs when some groups in the population are left out of, or underrepresented in, the sampling process.", "Bias": "A systematic tendency for a sampling method or study to produce results that are too high or too low.", "Double-blind experiment": "An experiment in which neither the subjects nor the people interacting with or evaluating them know which treatment was assigned.", "Data collection plan": "A description of how data will be obtained, including who or what will be measured and how the measurements will be collected.", "Response variable": "The variable that measures the outcome of interest in a study.", "Stratified random sample": "A sample obtained by dividing the population into similar groups called strata and taking a random sample from every stratum.", "Experiment": "A study that deliberately imposes treatments on experimental units to measure their responses.", "Response bias": "Bias caused by inaccurate or untruthful responses, wording effects, interviewer effects, or other influences on how people answer.", "Placebo": "An inactive or fake treatment that resembles the real treatment and is used for comparison.", "Random assignment": "Using a chance process to assign experimental units to treatments.", "Random sample": "A sample selected using a chance process.", "Experimental unit": "The individual object, person, or other unit to which a treatment is randomly assigned.", "Blinding": "Keeping subjects, researchers, or evaluators unaware of which treatment was assigned.", "Systematic random sample": "A sample obtained by randomly selecting a starting point and then selecting individuals at a fixed interval.", "Explanatory variable": "A variable that may explain or predict changes in a response variable.", "Block": "A group of experimental units that are similar in a way expected to affect the response.", "Completely randomized design": "An experiment in which all experimental units are randomly assigned to treatments without first being placed into blocks.", "Observational study": "A study that observes individuals and measures variables without imposing treatments.", "Voluntary response bias": "Bias that occurs when people choose themselves to participate, often causing people with strong opinions to be overrepresented.", "Nonresponse bias": "Bias that occurs when selected individuals do not respond and those who respond differ from those who do not.", "Sampling frame": "The list or source from which the sample is actually selected.", "Cluster random sample": "A sample obtained by dividing the population into groups that each resemble the population, randomly selecting some groups, and sampling everyone in the selected groups."};
+const all=Object.keys(defs);
+let pool=[...all], used=[], current=null, revealed=false;
+
+const cage=document.getElementById('cage');
+const ballsInCage=document.getElementById('ballsInCage');
+
+function ballPos(i){
+ const angle=i*2.3999632297;
+ const radius=25+(i%6)*16;
+ const cx=140+Math.cos(angle)*Math.min(radius,100);
+ const cy=140+Math.sin(angle)*Math.min(radius,100);
+ return {x:Math.max(18,Math.min(246,cx-17)),y:Math.max(18,Math.min(246,cy-17))};
+}
+function buildBalls(){
+ cage.innerHTML='';
+ all.forEach((term,i)=>{
+   const b=document.createElement('div');
+   b.className='ball';
+   b.dataset.term=term;
+   b.textContent=i+1;
+   const p=ballPos(i);
+   b.style.left=p.x+'px'; b.style.top=p.y+'px';
+   cage.appendChild(b);
+ });
+ ballsInCage.textContent=pool.length;
+}
+function shuffleBalls(){
+ [...cage.querySelectorAll('.ball:not(.called)')].forEach(b=>{
+   const angle=Math.random()*Math.PI*2;
+   const radius=Math.sqrt(Math.random())*95;
+   const cx=140+Math.cos(angle)*radius;
+   const cy=140+Math.sin(angle)*radius;
+   b.style.left=Math.max(18,Math.min(246,cx-17))+'px';
+   b.style.top=Math.max(18,Math.min(246,cy-17))+'px';
+ });
+}
+function render(){
+ document.getElementById('called').textContent=used.length;
+ document.getElementById('remaining').textContent=pool.length;
+ ballsInCage.textContent=pool.length;
+ document.getElementById('history').innerHTML=used.slice(0,-(current?1:0)).map(x=>'<span class="chip">'+defs[x]+'</span>').join('');
+}
+
+document.getElementById('next').onclick=()=>{
+ if(!pool.length){
+   document.getElementById('definition').textContent='All vocabulary words have been called!';
+   document.getElementById('answer').innerHTML='<span class="hidden">Reset to play again.</span>';
+   current=null; return;
+ }
+ document.getElementById('definition').textContent='Mixing the cage...';
+ document.getElementById('answer').innerHTML='<span class="hidden">Vocabulary word hidden</span>';
+ cage.classList.add('spinning');
+ shuffleBalls();
+ const i=Math.floor(Math.random()*pool.length);
+ const picked=pool.splice(i,1)[0];
+ setTimeout(()=>{
+   cage.classList.remove('spinning');
+   const ball=[...cage.querySelectorAll('.ball')].find(b=>b.dataset.term===picked);
+   if(ball) ball.classList.add('called');
+   current=picked; used.push(current); revealed=false;
+   document.getElementById('definition').textContent=defs[current];
+   document.getElementById('answer').innerHTML='<span class="hidden">Vocabulary word hidden — click “Show Word” when ready.</span>';
+   render();
+ },1100);
+};
+document.getElementById('show').onclick=()=>{
+ if(!current)return;
+ revealed=true; document.getElementById('answer').textContent=current;
+};
+document.getElementById('reset').onclick=()=>{
+ pool=[...all];used=[];current=null;revealed=false;
+ document.getElementById('definition').textContent='Press “Next Definition” to begin.';
+ document.getElementById('answer').innerHTML='<span class="hidden">Vocabulary word hidden</span>';
+ buildBalls();
+ render();
+};
+buildBalls();
+render();
+</script></body></html>
